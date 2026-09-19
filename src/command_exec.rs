@@ -63,7 +63,7 @@ pub async fn handle_text<S: RepoSource>(
             }
             Some(execute_connect(db, gh, target, args).await)
         }
-        Err(_) => None, // Silenciar errores de comandos desconocidos
+        Err(e) => Some(format!("Error: {e}")),
     }
 }
 

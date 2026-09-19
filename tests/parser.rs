@@ -28,6 +28,7 @@ fn non_commands_ignored() {
     assert!(parse(&px(), "hello world").is_none());
     assert!(parse(&px(), "").is_none());
     assert!(parse(&px(), "/").is_none());
+    assert!(parse(&px(), "/frobnicate").is_none());
 }
 
 #[test]
@@ -67,8 +68,6 @@ fn connect_errors() {
         .unwrap()
         .unwrap_err();
     assert_eq!(e, ParseError::UnknownKind("foo".into()));
-    let e = parse(&px(), "/frobnicate").unwrap().unwrap_err();
-    assert_eq!(e, ParseError::UnknownCommand("frobnicate".into()));
     // Bare word before any flag is rejected (flags are mandatory).
     let e = parse(&px(), "/connect kasha -n pr").unwrap().unwrap_err();
     assert_eq!(e, ParseError::MissingRepos);

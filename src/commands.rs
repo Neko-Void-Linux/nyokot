@@ -27,7 +27,6 @@ pub enum Command {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParseError {
-    UnknownCommand(String),
     MissingRepos,
     MissingKinds,
     UnknownKind(String),
@@ -36,7 +35,6 @@ pub enum ParseError {
 impl std::fmt::Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::UnknownCommand(c) => write!(f, "unknown command `{c}`. Try `help`."),
             Self::MissingRepos => write!(f, "missing `-r <repos...|all>`."),
             Self::MissingKinds => write!(f, "missing `-n <pr|is|co|all...>`."),
             Self::UnknownKind(k) => {
@@ -61,14 +59,14 @@ pub fn parse(prefixes: &[String], text: &str) -> Option<std::result::Result<Comm
         return None;
     }
     let cmd = words.remove(0).to_lowercase();
-    Some(match cmd.as_str() {
-        "help" => Ok(Command::Help),
-        "disconnect" => Ok(Command::Disconnect),
-        "pause" => Ok(Command::Pause),
-        "resume" => Ok(Command::Resume),
-        "connect" => parse_connect(&words),
-        other => Err(ParseError::UnknownCommand(other.to_string())),
-    })
+    match cmd.as_str() {
+        "help" => Some(Ok(Command::Help)),
+        "disconnect" => Some(Ok(Command::Disconnect)),
+        "pause" => Some(Ok(Command::Pause)),
+        "resume" => Some(Ok(Command::Resume)),
+        "connect" => Some(parse_connect(&words)),
+        _ => None,
+    }
 }
 
 fn parse_connect(words: &[&str]) -> std::result::Result<Command, ParseError> {
