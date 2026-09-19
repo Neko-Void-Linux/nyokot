@@ -33,36 +33,38 @@ pub async fn handle_text<S: RepoSource>(
     text: &str,
 ) -> Option<String> {
     let cmd = parse(prefixes, text)?;
-    Some(match cmd {
-        Ok(Command::Help) => help_text(prefixes.first().map(String::as_str).unwrap_or("/")),
+    match cmd {
+        Ok(Command::Help) => Some(help_text(
+            prefixes.first().map(String::as_str).unwrap_or("/"),
+        )),
         Ok(Command::Disconnect) => {
             match crate::db::disconnect_channel(db, target.platform, target.channel_id).await {
-                Ok(_) => "Channel unlinked. No further notifications here.".into(),
-                Err(e) => format!("Failed to disconnect: {e}"),
+                Ok(_) => Some("Channel unlinked. No further notifications here.".into()),
+                Err(e) => Some(format!("Failed to disconnect: {e}")),
             }
         }
         Ok(Command::Pause) => {
             match crate::db::set_paused(db, target.platform, target.channel_id, true).await {
-                Ok(true) => "Notifications paused in this channel.".into(),
-                Ok(false) => "This channel is not linked. Use `connect` first.".into(),
-                Err(e) => format!("Failed to pause: {e}"),
+                Ok(true) => Some("Notifications paused in this channel.".into()),
+                Ok(false) => Some("This channel is not linked. Use `connect` first.".into()),
+                Err(e) => Some(format!("Failed to pause: {e}")),
             }
         }
         Ok(Command::Resume) => {
             match crate::db::set_paused(db, target.platform, target.channel_id, false).await {
-                Ok(true) => "Notifications resumed in this channel.".into(),
-                Ok(false) => "This channel is not linked. Use `connect` first.".into(),
-                Err(e) => format!("Failed to resume: {e}"),
+                Ok(true) => Some("Notifications resumed in this channel.".into()),
+                Ok(false) => Some("This channel is not linked. Use `connect` first.".into()),
+                Err(e) => Some(format!("Failed to resume: {e}")),
             }
         }
         Ok(Command::Connect(args)) => {
             if !is_admin {
                 return Some("Only server admins can use this command.".into());
             }
-            execute_connect(db, gh, target, args).await
+            Some(execute_connect(db, gh, target, args).await)
         }
-        Err(e) => format!("Error: {e}"),
-    })
+        Err(_) => None, // Silenciar errores de comandos desconocidos
+    }
 }
 
 async fn execute_connect<S: RepoSource>(
